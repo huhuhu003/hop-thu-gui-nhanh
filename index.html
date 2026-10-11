@@ -107,6 +107,30 @@
     color: var(--danger);
     font-weight: 700;
   }
+  .category-chips {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .category-chip {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid var(--line-input);
+    border-radius: var(--radius-md);
+    background: var(--accent-soft);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .category-chip.selected {
+    background: #4a8661;
+    border-color: #4a8661;
+    color: #fff;
+  }
   .badge-count {
     font-size: 12px;
     font-weight: 700;
@@ -478,6 +502,23 @@
     </div>
   </section>
 
+  <section class="card">
+    <div class="card-header">
+      <h2>Danh mục <span class="req">*</span></h2>
+    </div>
+    <div class="category-chips" id="categoryChips" role="group" aria-label="Danh mục">
+      <button class="category-chip" type="button" aria-pressed="false">Áo</button>
+      <button class="category-chip" type="button" aria-pressed="false">Quần</button>
+      <button class="category-chip" type="button" aria-pressed="false">Váy</button>
+      <button class="category-chip" type="button" aria-pressed="false">Đầm</button>
+      <button class="category-chip" type="button" aria-pressed="false">Giày</button>
+      <button class="category-chip" type="button" aria-pressed="false">Túi</button>
+      <button class="category-chip" type="button" aria-pressed="false">Set</button>
+      <button class="category-chip" type="button" aria-pressed="false">Phụ kiện</button>
+      <button class="category-chip" type="button" aria-pressed="false">Khác</button>
+    </div>
+  </section>
+
   <button class="btn" id="btnSubmit" type="button" disabled>Đăng nhập Google để gửi</button>
   <div class="status" id="statusBox"></div>
 
@@ -513,6 +554,7 @@ var userEmail = "";
 var photos = [];      // mảng File
 var previewUrls = []; // mảng objectURL tương ứng với photos
 var brands = [];      // mảng {id, name}
+var category = "";
 var uploading = false;
 
 function getClientId(){
@@ -543,6 +585,7 @@ function buildGhiChu(o){
   lines.push("");
   lines.push("- Ngày giờ: " + o.dateStr);
   lines.push("- Thương hiệu: " + o.brand);
+  lines.push("- Danh mục: " + o.category);
   if(o.link)  lines.push("- Link sản phẩm: " + o.link);
   if(o.price) lines.push("- Giá: " + o.price);
   if(o.note)  lines.push("- Ghi chú: " + o.note);
@@ -553,11 +596,12 @@ function buildGhiChu(o){
 }
 
 function validateState(s){
-  // s = {photoCount, brandId, signedIn, uploading}
+  // s = {photoCount, brandId, category, signedIn, uploading}
   if(!s.signedIn)  return {ok:false, label:"Đăng nhập Google để gửi"};
   if(s.uploading)  return {ok:false, label:"Đang gửi..."};
   if(s.photoCount < 1) return {ok:false, label:"Chọn ít nhất 1 ảnh"};
   if(!s.brandId)   return {ok:false, label:"Chọn thương hiệu"};
+  if(!s.category)  return {ok:false, label:"Chọn danh mục"};
   return {ok:true, label:"Gửi vào kho"};
 }
 
@@ -575,6 +619,7 @@ function refreshSubmit(){
   var v = validateState({
     photoCount: photos.length,
     brandId: $("selBrand").value,
+    category: category,
     signedIn: !!accessToken,
     uploading: uploading
   });
@@ -874,9 +919,10 @@ function doSubmit(){
   if(uploading) return;
   var brandId = $("selBrand").value;
   var brandName = $("selBrand").selectedOptions[0] ? $("selBrand").selectedOptions[0].textContent : "";
-  var v = validateState({photoCount: photos.length, brandId: brandId, signedIn: !!accessToken, uploading: uploading});
+  var v = validateState({photoCount: photos.length, brandId: brandId, category: category, signedIn: !!accessToken, uploading: uploading});
   if(!v.ok){ setStatus(v.label + ".", "warn"); return; }
 
+  var submittedCategory = category;
   uploading = true;
   refreshSubmit();
   var now = new Date();
@@ -902,6 +948,7 @@ function doSubmit(){
     var md = buildGhiChu({
       dateStr: formatDateTime(now),
       brand: brandName,
+      category: submittedCategory,
       link: link,
       price: price,
       note: note
@@ -917,6 +964,11 @@ function doSubmit(){
     $("inpNote").value = "";
     $("fileCamera").value = "";
     $("fileGallery").value = "";
+    category = "";
+    $("categoryChips").querySelectorAll(".category-chip").forEach(function(item){
+      item.classList.remove("selected");
+      item.setAttribute("aria-pressed", "false");
+    });
     uploading = false;
     refreshSubmit();
   }).catch(function(err){
@@ -952,6 +1004,18 @@ function init(){
   }
 
   $("selBrand").onchange = refreshSubmit;
+  var categoryChips = $("categoryChips").querySelectorAll(".category-chip");
+  categoryChips.forEach(function(chip){
+    chip.onclick = function(){
+      category = chip.textContent;
+      categoryChips.forEach(function(item){
+        var selected = item === chip;
+        item.classList.toggle("selected", selected);
+        item.setAttribute("aria-pressed", selected ? "true" : "false");
+      });
+      refreshSubmit();
+    };
+  });
 
   $("btnNewBrand").onclick = function(){
     var box = $("newBrandBox");
