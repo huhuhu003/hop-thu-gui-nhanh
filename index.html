@@ -89,7 +89,7 @@
     padding: 18px 16px;
     margin-bottom: 14px;
     box-shadow: var(--shadow-card);
-    transition: box-shadow 0.2s ease;
+    transition: none;
   }
   .card-header {
     display: flex;
@@ -163,7 +163,7 @@
     font-family: inherit;
     background: #fafdfa;
     color: var(--text);
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
     -webkit-appearance: none;
     appearance: none;
   }
@@ -199,7 +199,7 @@
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: var(--shadow-btn);
   }
   .btn:active {
@@ -296,7 +296,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: opacity 0.15s ease, transform 0.15s ease;
     padding: 0;
   }
   .thumb-del:active {
@@ -321,7 +321,7 @@
     border-radius: 50%;
     background: #c5cec6;
     flex-shrink: 0;
-    transition: background 0.2s ease;
+    transition: none;
   }
   .user-dot.online {
     background: #34c759;
@@ -412,13 +412,32 @@
     font-size: 13px;
     margin-top: 22px;
   }
+
+/* Crossfade selected chip colors without animating paint properties. */
+.category-chip{position:relative;isolation:isolate;overflow:visible}
+.category-chip.selected{background:var(--accent-soft);border-color:var(--line-input);color:var(--text)}
+.category-chip::after{content:attr(data-label);position:absolute;inset:-1px;display:flex;align-items:center;justify-content:center;border-radius:inherit;background:#4a8661;color:white;opacity:0;pointer-events:none;transition:opacity .18s}
+.category-chip.selected::after{opacity:1}
+#btnSubmit{transition:opacity .24s,transform .15s;opacity:1}
+#btnSubmit:disabled{opacity:.55}#btnSubmit.is-uploading{opacity:.85}
+#btnSubmit.is-uploading::before{content:"";display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:middle;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:upload-spin .8s linear infinite}
+@keyframes upload-spin{to{transform:rotate(360deg)}}
+.anim-toast{position:fixed;top:20px;left:16px;right:16px;margin:auto;width:fit-content;max-width:calc(100% - 32px);padding:12px 18px;border-radius:10px;background:#24392b;color:white;z-index:100;opacity:0;transform:translateY(-14px);pointer-events:none;transition:transform .22s ease-out,opacity .22s ease-out}
+.anim-toast.visible{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@media(min-width:1024px){.app{max-width:720px;padding-inline:24px;padding-top:28px}}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="header-badge">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <svg width="24" height="24" style="flex:none;display:block" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo Kho Up Ảnh">
+  <rect x="5" y="4" width="15" height="19" rx="1.2" transform="rotate(-7 12.5 13.5)" stroke="#82b093" stroke-width="1.15" stroke-linejoin="round"/>
+  <rect x="9" y="5.5" width="15" height="19" rx="1.2" fill="#ffffff" stroke="#4a8661" stroke-width="1.3" stroke-linejoin="round"/>
+  <circle cx="19" cy="10.5" r="1.5" stroke="#4a8661" stroke-width="0.9" fill="#82b093" fill-opacity="0.45"/>
+  <path d="M11 20L14.5 16.5L17.5 19L20.5 16.5" stroke="#4a8661" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
       Kho lưu trữ Drive
     </div>
     <h1>Kho up ảnh</h1>
@@ -537,6 +556,7 @@
   <p class="foot">Chạy trực tiếp trên thiết bị của bạn · Dữ liệu bảo mật</p>
 </div>
 
+<div id="animToast" class="anim-toast" role="status" aria-live="polite"></div>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 "use strict";
@@ -556,6 +576,8 @@ var previewUrls = []; // mảng objectURL tương ứng với photos
 var brands = [];      // mảng {id, name}
 var category = "";
 var uploading = false;
+var uploadedCount = 0, uploadTotal = 0, animToastTimer;
+var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 function getClientId(){
   try{ return localStorage.getItem(LS_CLIENT_ID) || OAUTH_CLIENT_ID || ""; }
@@ -608,11 +630,19 @@ function validateState(s){
 /* ============ UI ============ */
 function $(id){ return document.getElementById(id); }
 
+function showAnimToast(msg){
+  var toast = $("animToast");
+  clearTimeout(animToastTimer);
+  toast.textContent = msg;
+  toast.classList.add("visible");
+  animToastTimer = setTimeout(function(){ toast.classList.remove("visible"); }, 2500);
+}
 function setStatus(msg, type){
   var box = $("statusBox");
   if(!msg){ box.className = "status"; box.textContent = ""; return; }
   box.className = "status show " + (type || "");
   box.textContent = msg;
+  if(type === "ok" || type === "err" || type === "warn") showAnimToast(msg);
 }
 
 function refreshSubmit(){
@@ -625,7 +655,8 @@ function refreshSubmit(){
   });
   var btn = $("btnSubmit");
   btn.disabled = !v.ok;
-  btn.textContent = v.label;
+  btn.classList.toggle("is-uploading", uploading);
+  btn.textContent = uploading ? "Đang gửi " + uploadedCount + "/" + uploadTotal : v.label;
 }
 
 function removePhoto(i){
@@ -923,6 +954,8 @@ function doSubmit(){
   if(!v.ok){ setStatus(v.label + ".", "warn"); return; }
 
   var submittedCategory = category;
+  uploadedCount = 0;
+  uploadTotal = photos.length;
   uploading = true;
   refreshSubmit();
   var now = new Date();
@@ -939,7 +972,7 @@ function doSubmit(){
     chain = chain.then(function(folderId){
       setStatus("Đang gửi ảnh " + (i+1) + "/" + totalCount + "...", "");
       var fname = (f.name && f.name.trim()) ? f.name : ("anh-" + (i+1) + ".jpg");
-      return uploadFile(fname, f.type || "image/jpeg", f, folderId).then(function(){ return folderId; });
+      return uploadFile(fname, f.type || "image/jpeg", f, folderId).then(function(){ uploadedCount = i + 1; refreshSubmit(); return folderId; });
     });
   });
 
@@ -1006,7 +1039,10 @@ function init(){
   $("selBrand").onchange = refreshSubmit;
   var categoryChips = $("categoryChips").querySelectorAll(".category-chip");
   categoryChips.forEach(function(chip){
+    chip.setAttribute("data-label", chip.textContent);
     chip.onclick = function(){
+      chip.getAnimations().forEach(function(animation){ animation.cancel(); });
+      if(!reducedMotion.matches) chip.animate([{transform:"scale(1)"},{transform:"scale(1.08)",offset:0.45},{transform:"scale(1)"}], {duration:260,easing:"ease-out"});
       category = chip.textContent;
       categoryChips.forEach(function(item){
         var selected = item === chip;
