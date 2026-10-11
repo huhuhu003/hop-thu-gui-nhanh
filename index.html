@@ -6,94 +6,407 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Hộp thư">
-<meta name="theme-color" content="#1b7a4b">
-<title>Hộp thư gửi nhanh</title>
+<meta name="apple-mobile-web-app-title" content="Kho up ảnh">
+<meta name="theme-color" content="#4a8661">
+<title>Kho up ảnh</title>
 <style>
-  :root{
-    --bg:#f4f2ec; --card:#ffffff; --text:#232323; --muted:#7a7a7a;
-    --accent:#1b7a4b; --accent-dark:#145c39; --line:#e4e1d8;
-    --danger:#c0392b; --warn-bg:#fff7e6; --warn-line:#e8c766;
-    --ok-bg:#e9f7ef; --ok-line:#7cc79a; --err-bg:#fdecea; --err-line:#e89a93;
+  :root {
+    --bg: #f8faf7;
+    --card: #ffffff;
+    --text: #212b23;
+    --text-muted: #6b7a6e;
+    --accent: #4a8661;
+    --accent-soft: #edf5ef;
+    --accent-dark: #3b6d4e;
+    --accent-hover: #447b59;
+    --line: #e3ece4;
+    --line-input: #d3dfd4;
+    --shadow-card: 0 3px 14px rgba(32, 50, 36, 0.04), 0 1px 3px rgba(32, 50, 36, 0.02);
+    --shadow-btn: 0 4px 14px rgba(74, 134, 97, 0.22);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --danger: #cf4d4d;
+    --warn-bg: #fef9ed;
+    --warn-line: #f1dfaf;
+    --warn-text: #7a5a14;
+    --ok-bg: #edf8f1;
+    --ok-line: #9ad4ae;
+    --err-bg: #fdf2f2;
+    --err-line: #f3b1b1;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  body{
-    margin:0; background:var(--bg); color:var(--text);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-    font-size:16px; line-height:1.5;
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
-  .app{max-width:520px; margin:0 auto; padding:16px 14px 48px;}
-  header{text-align:center; margin:6px 0 16px;}
-  header h1{font-size:22px; margin:0 0 4px;}
-  header .sub{color:var(--muted); font-size:14px; margin:0;}
-  .card{
-    background:var(--card); border:1px solid var(--line); border-radius:14px;
-    padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.04);
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
-  .card h2{font-size:16px; margin:0 0 12px;}
-  .req{color:var(--danger);}
-  label{display:block; margin-bottom:12px; font-size:14px; font-weight:600;}
-  label:last-child{margin-bottom:0;}
-  input[type=text],input[type=url],textarea,select{
-    width:100%; min-height:48px; margin-top:6px; padding:10px 12px;
-    border:1px solid #d5d2c7; border-radius:10px; font-size:16px; font-family:inherit;
-    background:#fff; color:var(--text);
+  .app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px 14px calc(48px + env(safe-area-inset-bottom, 0px));
   }
-  textarea{resize:vertical;}
-  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent); border-color:var(--accent);}
-  .btn{
-    display:block; width:100%; min-height:52px; border:none; border-radius:12px;
-    background:var(--accent); color:#fff; font-size:17px; font-weight:700;
-    cursor:pointer; margin-top:4px;
+  header {
+    text-align: center;
+    margin: 6px 0 18px;
   }
-  .btn:active{background:var(--accent-dark);}
-  .btn:disabled{background:#b9b9b9; cursor:not-allowed;}
-  .btn-row{display:flex; gap:10px;}
-  .btn-row .btn{margin-top:0;}
-  .btn-secondary{
-    background:#fff; color:var(--accent); border:2px solid var(--accent);
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-bottom: 8px;
   }
-  .btn-secondary:active{background:#eef7f1;}
-  .btn-small{min-height:44px; font-size:15px;}
-  .hint{color:var(--muted); font-size:13px; margin:8px 0 0;}
-  .preview{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
-  .preview:empty{display:none;}
-  .thumb{position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#eee;}
-  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
-  .thumb button{
-    position:absolute; top:4px; right:4px; width:28px; height:28px; border-radius:50%;
-    border:none; background:rgba(0,0,0,.6); color:#fff; font-size:16px; line-height:1; cursor:pointer;
+  header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+    margin: 0 0 4px;
+    color: var(--text);
   }
-  .status{
-    border-radius:12px; padding:12px 14px; font-size:14px; margin-top:12px; display:none;
-    border:1px solid var(--line); background:#fff;
+  header .sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
   }
-  .status.show{display:block;}
-  .status.ok{background:var(--ok-bg); border-color:var(--ok-line);}
-  .status.err{background:var(--err-bg); border-color:var(--err-line);}
-  .status.warn{background:var(--warn-bg); border-color:var(--warn-line);}
-  .warn-card{background:var(--warn-bg); border-color:var(--warn-line);}
-  .warn-card ol{margin:8px 0 0; padding-left:20px; font-size:14px;}
-  .warn-card li{margin-bottom:4px;}
-  #newBrandBox{display:flex; gap:8px; margin-top:10px;}
-  #newBrandBox[hidden]{display:none;}
-  #newBrandBox input{flex:1;}
-  .user-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-  .user-row .who{font-size:14px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  details.settings summary{font-size:16px; font-weight:700; cursor:pointer; padding:4px 0;}
-  .foot{text-align:center; color:var(--muted); font-size:12px; margin-top:18px;}
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 18px 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+  }
+  .req {
+    color: var(--danger);
+    font-weight: 700;
+  }
+  .badge-count {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  label {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  label:last-child {
+    margin-bottom: 0;
+  }
+  input[type=text],
+  input[type=url],
+  textarea,
+  select {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 6px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--line-input);
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-family: inherit;
+    background: #fafdfa;
+    color: var(--text);
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a8661' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+  }
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #ffffff;
+    box-shadow: 0 0 0 3.5px rgba(74, 134, 97, 0.14);
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 50px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-btn);
+  }
+  .btn:active {
+    background: var(--accent-dark);
+    transform: scale(0.985);
+  }
+  .btn:disabled {
+    background: #cdd6cf;
+    color: #7d8c80;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .btn-secondary {
+    background: #ffffff;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    box-shadow: none;
+  }
+  .btn-secondary:active {
+    background: var(--accent-soft);
+    transform: scale(0.985);
+  }
+  .btn-small {
+    min-height: 42px;
+    font-size: 14px;
+    padding: 0 16px;
+    border-radius: var(--radius-sm);
+  }
+  .hint {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin: 8px 0 0;
+    line-height: 1.4;
+  }
+  .preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .preview:empty {
+    display: none;
+  }
+  .thumb {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1.5px solid var(--line);
+    background: var(--accent-soft);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .thumb-num {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(20, 30, 24, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    line-height: 1.2;
+  }
+  .thumb-del {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(20, 30, 24, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+  }
+  .thumb-del:active {
+    background: var(--danger);
+    transform: scale(0.9);
+  }
+  .user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .user-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .user-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #c5cec6;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+  }
+  .user-dot.online {
+    background: #34c759;
+    box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.2);
+  }
+  .user-row .who {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .status {
+    border-radius: var(--radius-md);
+    padding: 13px 15px;
+    font-size: 14px;
+    margin-top: 14px;
+    display: none;
+    border: 1px solid var(--line);
+    background: #fff;
+    line-height: 1.45;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+  .status.show {
+    display: block;
+  }
+  .status.ok {
+    background: var(--ok-bg);
+    border-color: var(--ok-line);
+    color: #1a5e33;
+  }
+  .status.err {
+    background: var(--err-bg);
+    border-color: var(--err-line);
+    color: #a32222;
+  }
+  .status.warn {
+    background: var(--warn-bg);
+    border-color: var(--warn-line);
+    color: var(--warn-text);
+  }
+  .warn-card {
+    background: var(--warn-bg);
+    border-color: var(--warn-line);
+  }
+  .warn-card h2 {
+    color: var(--warn-text);
+  }
+  .warn-card ol {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--warn-text);
+  }
+  .warn-card li {
+    margin-bottom: 5px;
+  }
+  #newBrandBox {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  #newBrandBox[hidden] {
+    display: none;
+  }
+  #newBrandBox input {
+    flex: 1;
+    margin-top: 0;
+  }
+  details.settings {
+    border-radius: var(--radius-lg);
+  }
+  details.settings summary {
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 0;
+    color: var(--text-muted);
+  }
+  details.settings[open] summary {
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .foot {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-top: 22px;
+  }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>Hộp thư gửi nhanh</h1>
-    <p class="sub">Gửi ảnh sản phẩm vào kho Drive chung</p>
+    <div class="header-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Kho lưu trữ Drive
+    </div>
+    <h1>Kho up ảnh</h1>
+    <p class="sub">Tải ảnh sản phẩm trực tiếp vào Google Drive</p>
   </header>
 
   <section class="card" id="authCard">
     <div class="user-row" id="authOut">
-      <span class="who" id="authWho">Chưa đăng nhập Google</span>
+      <div class="user-status">
+        <span class="user-dot" id="authDot"></span>
+        <span class="who" id="authWho">Chưa đăng nhập Google</span>
+      </div>
       <button class="btn btn-small" id="btnSignIn" style="width:auto;padding:0 18px;">Đăng nhập</button>
       <button class="btn btn-small btn-secondary" id="btnSignOut" style="width:auto;padding:0 18px;" hidden>Đăng xuất</button>
     </div>
@@ -114,10 +427,19 @@
   </section>
 
   <section class="card">
-    <h2>Ảnh sản phẩm <span class="req">*</span></h2>
+    <div class="card-header">
+      <h2>Ảnh sản phẩm <span class="req">*</span></h2>
+      <span class="badge-count" id="photoCountBadge" style="display:none;"></span>
+    </div>
     <div class="btn-row">
-      <button class="btn btn-secondary" id="btnCamera">Chụp ảnh</button>
-      <button class="btn btn-secondary" id="btnGallery">Chọn từ máy</button>
+      <button class="btn btn-secondary" id="btnCamera" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Chụp ảnh
+      </button>
+      <button class="btn btn-secondary" id="btnGallery" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        Chọn từ máy
+      </button>
     </div>
     <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
     <input type="file" id="fileGallery" accept="image/*" multiple hidden>
@@ -126,7 +448,9 @@
   </section>
 
   <section class="card">
-    <h2>Thông tin thêm</h2>
+    <div class="card-header">
+      <h2>Thông tin thêm</h2>
+    </div>
     <label>Link sản phẩm
       <input type="url" id="inpLink" inputmode="url" placeholder="Dán link (không bắt buộc)">
     </label>
@@ -139,35 +463,37 @@
   </section>
 
   <section class="card">
-    <h2>Thương hiệu <span class="req">*</span></h2>
+    <div class="card-header">
+      <h2>Thương hiệu <span class="req">*</span></h2>
+    </div>
     <select id="selBrand">
       <option value="">-- Chọn thương hiệu --</option>
     </select>
     <p class="hint" id="brandHint">Đăng nhập Google để tải danh sách hãng từ kho.</p>
-    <button class="btn btn-secondary btn-small" id="btnNewBrand" style="margin-top:10px;">+ Tạo hãng mới</button>
+    <button class="btn btn-secondary btn-small" id="btnNewBrand" type="button" style="margin-top:12px;">+ Tạo hãng mới</button>
     <div id="newBrandBox" hidden>
       <input type="text" id="inpNewBrand" placeholder="Tên hãng mới">
-      <button class="btn btn-small" id="btnCreateBrand" style="width:auto;padding:0 16px;">Tạo</button>
-      <button class="btn btn-small btn-secondary" id="btnCancelBrand" style="width:auto;padding:0 16px;">Hủy</button>
+      <button class="btn btn-small" id="btnCreateBrand" type="button" style="width:auto;padding:0 16px;">Tạo</button>
+      <button class="btn btn-small btn-secondary" id="btnCancelBrand" type="button" style="width:auto;padding:0 16px;">Hủy</button>
     </div>
   </section>
 
-  <button class="btn" id="btnSubmit" disabled>Đăng nhập Google để gửi</button>
+  <button class="btn" id="btnSubmit" type="button" disabled>Đăng nhập Google để gửi</button>
   <div class="status" id="statusBox"></div>
 
   <details class="card settings">
-    <summary>Cài đặt</summary>
+    <summary>Cài đặt nâng cao</summary>
     <label>Google Client ID
       <input type="text" id="cfgClientId" placeholder="Dán Client ID vào đây" autocomplete="off">
     </label>
     <label>ID thư mục kho trên Drive
       <input type="text" id="cfgRootFolder" autocomplete="off">
     </label>
-    <button class="btn btn-secondary" id="btnSaveCfg">Lưu cài đặt</button>
+    <button class="btn btn-secondary btn-small" id="btnSaveCfg" type="button" style="margin-top:12px;">Lưu cài đặt</button>
     <p class="hint">Cài đặt được lưu trên máy này, không gửi đi đâu.</p>
   </details>
 
-  <p class="foot">Hộp thư gửi nhanh · chạy hoàn toàn trên máy của bạn</p>
+  <p class="foot">Chạy trực tiếp trên thiết bị của bạn · Dữ liệu bảo mật</p>
 </div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -185,7 +511,7 @@ var accessToken = null;
 var tokenClient = null;
 var userEmail = "";
 var photos = [];      // mảng File
-var previewUrls = [];
+var previewUrls = []; // mảng objectURL tương ứng với photos
 var brands = [];      // mảng {id, name}
 var uploading = false;
 
@@ -222,7 +548,7 @@ function buildGhiChu(o){
   if(o.note)  lines.push("- Ghi chú: " + o.note);
   lines.push("");
   lines.push("---");
-  lines.push("Gửi từ app Hộp thư gửi nhanh.");
+  lines.push("Gửi tự động từ ứng dụng.");
   return lines.join("\n");
 }
 
@@ -257,30 +583,65 @@ function refreshSubmit(){
   btn.textContent = v.label;
 }
 
-function renderPreview(){
-  previewUrls.forEach(function(url){ URL.revokeObjectURL(url); });
+function removePhoto(i){
+  if(uploading) return;
+  if(i < 0 || i >= photos.length) return;
+  var url = previewUrls[i];
+  if(url){
+    URL.revokeObjectURL(url);
+  }
+  photos.splice(i, 1);
+  previewUrls.splice(i, 1);
+  renderPreview();
+  refreshSubmit();
+}
+
+function clearPhotos(){
+  previewUrls.forEach(function(url){
+    if(url) URL.revokeObjectURL(url);
+  });
   previewUrls = [];
+  photos = [];
+  renderPreview();
+}
+
+function renderPreview(){
   var box = $("photoPreview");
   box.innerHTML = "";
+  var countBadge = $("photoCountBadge");
+  if(countBadge){
+    if(photos.length > 0){
+      countBadge.textContent = photos.length + " ảnh";
+      countBadge.style.display = "inline-block";
+    }else{
+      countBadge.textContent = "";
+      countBadge.style.display = "none";
+    }
+  }
   photos.forEach(function(f, i){
     var d = document.createElement("div");
     d.className = "thumb";
+    
     var img = document.createElement("img");
-    var url = URL.createObjectURL(f);
-    previewUrls.push(url);
-    img.src = url;
+    img.src = previewUrls[i];
     img.alt = "Ảnh " + (i+1);
+    
+    var num = document.createElement("span");
+    num.className = "thumb-num";
+    num.textContent = (i+1);
+
     var x = document.createElement("button");
     x.type = "button";
-    x.textContent = "×";
+    x.className = "thumb-del";
+    x.textContent = "\u00d7";
     x.setAttribute("aria-label", "Xóa ảnh " + (i+1));
-    x.onclick = function(){
-      if(uploading) return;
-      photos.splice(i, 1);
-      renderPreview();
-      refreshSubmit();
+    x.onclick = function(e){
+      if(e && e.stopPropagation) e.stopPropagation();
+      removePhoto(i);
     };
+
     d.appendChild(img);
+    d.appendChild(num);
     d.appendChild(x);
     box.appendChild(d);
   });
@@ -306,6 +667,8 @@ function renderBrands(){
 /* ============ GOOGLE AUTH ============ */
 function updateAuthUI(){
   $("authWho").textContent = accessToken ? ("Đã đăng nhập" + (userEmail ? ": " + userEmail : "")) : "Chưa đăng nhập Google";
+  var dot = $("authDot");
+  if(dot) dot.className = "user-dot" + (accessToken ? " online" : "");
   $("btnSignIn").hidden = !!accessToken;
   $("btnSignOut").hidden = !accessToken;
   $("setupNotice").hidden = !!getClientId();
@@ -521,13 +884,14 @@ function doSubmit(){
   var link = $("inpLink").value.trim();
   var price = $("inpPrice").value.trim();
   var note = $("inpNote").value.trim();
+  var totalCount = photos.length;
 
   setStatus("Đang tạo thư mục " + folderName + "...", "");
   var chain = createFolder(folderName, brandId);
 
   photos.forEach(function(f, i){
     chain = chain.then(function(folderId){
-      setStatus("Đang gửi ảnh " + (i+1) + "/" + photos.length + "...", "");
+      setStatus("Đang gửi ảnh " + (i+1) + "/" + totalCount + "...", "");
       var fname = (f.name && f.name.trim()) ? f.name : ("anh-" + (i+1) + ".jpg");
       return uploadFile(fname, f.type || "image/jpeg", f, folderId).then(function(){ return folderId; });
     });
@@ -546,14 +910,13 @@ function doSubmit(){
   });
 
   chain.then(function(){
-    setStatus("Đã gửi xong " + photos.length + " ảnh vào kho (hãng " + brandName + ", thư mục " + folderName + ").", "ok");
-    photos = [];
+    setStatus("Đã gửi xong " + totalCount + " ảnh vào kho (hãng " + brandName + ", thư mục " + folderName + ").", "ok");
+    clearPhotos();
     $("inpLink").value = "";
     $("inpPrice").value = "";
     $("inpNote").value = "";
     $("fileCamera").value = "";
     $("fileGallery").value = "";
-    renderPreview();
     uploading = false;
     refreshSubmit();
   }).catch(function(err){
@@ -577,7 +940,10 @@ function init(){
     if(!list || !list.length) return;
     for(var i = 0; i < list.length; i++){
       var f = list[i];
-      if(!f.type || f.type.indexOf("image/") === 0) photos.push(f);
+      if(!f.type || f.type.indexOf("image/") === 0){
+        photos.push(f);
+        previewUrls.push(URL.createObjectURL(f));
+      }
     }
     $("fileCamera").value = "";
     $("fileGallery").value = "";
