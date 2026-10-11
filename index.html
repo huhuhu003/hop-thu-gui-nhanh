@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hộp thư gửi nhanh</title>
+<style>
+  :root{
+    --bg:#f4f2ec; --card:#ffffff; --text:#232323; --muted:#7a7a7a;
+    --accent:#1b7a4b; --accent-dark:#145c39; --line:#e4e1d8;
+    --danger:#c0392b; --warn-bg:#fff7e6; --warn-line:#e8c766;
+    --ok-bg:#e9f7ef; --ok-line:#7cc79a; --err-bg:#fdecea; --err-line:#e89a93;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:16px; line-height:1.5;
+  }
+  .app{max-width:520px; margin:0 auto; padding:16px 14px 48px;}
+  header{text-align:center; margin:6px 0 16px;}
+  header h1{font-size:22px; margin:0 0 4px;}
+  header .sub{color:var(--muted); font-size:14px; margin:0;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:16px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.04);
+  }
+  .card h2{font-size:16px; margin:0 0 12px;}
+  .req{color:var(--danger);}
+  label{display:block; margin-bottom:12px; font-size:14px; font-weight:600;}
+  label:last-child{margin-bottom:0;}
+  input[type=text],input[type=url],textarea,select{
+    width:100%; min-height:48px; margin-top:6px; padding:10px 12px;
+    border:1px solid #d5d2c7; border-radius:10px; font-size:16px; font-family:inherit;
+    background:#fff; color:var(--text);
+  }
+  textarea{resize:vertical;}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--accent); border-color:var(--accent);}
+  .btn{
+    display:block; width:100%; min-height:52px; border:none; border-radius:12px;
+    background:var(--accent); color:#fff; font-size:17px; font-weight:700;
+    cursor:pointer; margin-top:4px;
+  }
+  .btn:active{background:var(--accent-dark);}
+  .btn:disabled{background:#b9b9b9; cursor:not-allowed;}
+  .btn-row{display:flex; gap:10px;}
+  .btn-row .btn{margin-top:0;}
+  .btn-secondary{
+    background:#fff; color:var(--accent); border:2px solid var(--accent);
+  }
+  .btn-secondary:active{background:#eef7f1;}
+  .btn-small{min-height:44px; font-size:15px;}
+  .hint{color:var(--muted); font-size:13px; margin:8px 0 0;}
+  .preview{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px;}
+  .preview:empty{display:none;}
+  .thumb{position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:#eee;}
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .thumb button{
+    position:absolute; top:4px; right:4px; width:28px; height:28px; border-radius:50%;
+    border:none; background:rgba(0,0,0,.6); color:#fff; font-size:16px; line-height:1; cursor:pointer;
+  }
+  .status{
+    border-radius:12px; padding:12px 14px; font-size:14px; margin-top:12px; display:none;
+    border:1px solid var(--line); background:#fff;
+  }
+  .status.show{display:block;}
+  .status.ok{background:var(--ok-bg); border-color:var(--ok-line);}
+  .status.err{background:var(--err-bg); border-color:var(--err-line);}
+  .status.warn{background:var(--warn-bg); border-color:var(--warn-line);}
+  .warn-card{background:var(--warn-bg); border-color:var(--warn-line);}
+  .warn-card ol{margin:8px 0 0; padding-left:20px; font-size:14px;}
+  .warn-card li{margin-bottom:4px;}
+  #newBrandBox{display:flex; gap:8px; margin-top:10px;}
+  #newBrandBox[hidden]{display:none;}
+  #newBrandBox input{flex:1;}
+  .user-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .user-row .who{font-size:14px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  details.settings summary{font-size:16px; font-weight:700; cursor:pointer; padding:4px 0;}
+  .foot{text-align:center; color:var(--muted); font-size:12px; margin-top:18px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Hộp thư gửi nhanh</h1>
+    <p class="sub">Gửi ảnh sản phẩm vào kho Drive chung</p>
+  </header>
+
+  <section class="card" id="authCard">
+    <div class="user-row" id="authOut">
+      <span class="who" id="authWho">Chưa đăng nhập Google</span>
+      <button class="btn btn-small" id="btnSignIn" style="width:auto;padding:0 18px;">Đăng nhập</button>
+      <button class="btn btn-small btn-secondary" id="btnSignOut" style="width:auto;padding:0 18px;" hidden>Đăng xuất</button>
+    </div>
+    <p class="hint">Đăng nhập bằng tài khoản Google được chia sẻ thư mục kho.</p>
+  </section>
+
+  <section class="card warn-card" id="setupNotice" hidden>
+    <h2>Chưa có Client ID</h2>
+    <p style="font-size:14px;margin:0 0 6px;">App cần Client ID của Google để ghi vào Drive. Làm một lần duy nhất:</p>
+    <ol>
+      <li>Vào <b>console.cloud.google.com</b>, tạo một project mới.</li>
+      <li>Bật <b>Google Drive API</b> (APIs &amp; Services → Library).</li>
+      <li>Credentials → Create Credentials → <b>OAuth client ID</b> → loại <b>Web application</b>.</li>
+      <li>Thêm <b>Authorized JavaScript origins</b> là địa chỉ nơi đặt file này (ví dụ https://huhuhu003.github.io).</li>
+      <li>Copy <b>Client ID</b>, dán vào mục Cài đặt bên dưới rồi lưu.</li>
+    </ol>
+    <p class="hint">Khi đăng nhập, Google sẽ cảnh báo "ứng dụng chưa được xác minh" — đây là app cá nhân của mình, cứ bấm Tiếp tục là được.</p>
+  </section>
+
+  <section class="card">
+    <h2>Ảnh sản phẩm <span class="req">*</span></h2>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btnCamera">Chụp ảnh</button>
+      <button class="btn btn-secondary" id="btnGallery">Chọn từ máy</button>
+    </div>
+    <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
+    <input type="file" id="fileGallery" accept="image/*" multiple hidden>
+    <div class="preview" id="photoPreview"></div>
+    <p class="hint">Bắt buộc chọn ít nhất 1 ảnh.</p>
+  </section>
+
+  <section class="card">
+    <h2>Thông tin thêm</h2>
+    <label>Link sản phẩm
+      <input type="url" id="inpLink" inputmode="url" placeholder="Dán link (không bắt buộc)">
+    </label>
+    <label>Giá
+      <input type="text" id="inpPrice" inputmode="decimal" placeholder="VD: 1.250.000 (không bắt buộc)">
+    </label>
+    <label>Ghi chú
+      <textarea id="inpNote" rows="3" placeholder="Ghi chú thêm (không bắt buộc)"></textarea>
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>Thương hiệu <span class="req">*</span></h2>
+    <select id="selBrand">
+      <option value="">-- Chọn thương hiệu --</option>
+    </select>
+    <p class="hint" id="brandHint">Đăng nhập Google để tải danh sách hãng từ kho.</p>
+    <button class="btn btn-secondary btn-small" id="btnNewBrand" style="margin-top:10px;">+ Tạo hãng mới</button>
+    <div id="newBrandBox" hidden>
+      <input type="text" id="inpNewBrand" placeholder="Tên hãng mới">
+      <button class="btn btn-small" id="btnCreateBrand" style="width:auto;padding:0 16px;">Tạo</button>
+      <button class="btn btn-small btn-secondary" id="btnCancelBrand" style="width:auto;padding:0 16px;">Hủy</button>
+    </div>
+  </section>
+
+  <button class="btn" id="btnSubmit" disabled>Đăng nhập Google để gửi</button>
+  <div class="status" id="statusBox"></div>
+
+  <details class="card settings">
+    <summary>Cài đặt</summary>
+    <label>Google Client ID
+      <input type="text" id="cfgClientId" placeholder="Dán Client ID vào đây" autocomplete="off">
+    </label>
+    <label>ID thư mục kho trên Drive
+      <input type="text" id="cfgRootFolder" autocomplete="off">
+    </label>
+    <button class="btn btn-secondary" id="btnSaveCfg">Lưu cài đặt</button>
+    <p class="hint">Cài đặt được lưu trên máy này, không gửi đi đâu.</p>
+  </details>
+
+  <p class="foot">Hộp thư gửi nhanh · chạy hoàn toàn trên máy của bạn</p>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+"use strict";
+/* ============ CẤU HÌNH ============ */
+const OAUTH_CLIENT_ID = "691292131607-qlnce4r8sjli8ml76hp9g54pue8jifmh.apps.googleusercontent.com"; // có thể dán cứng Client ID tại đây, hoặc nhập ở mục Cài đặt
+const ROOT_FOLDER_ID = "12znInzXGxcVfoW6TxrbiL2ylcKnkxOiC"; // thư mục "Kho ảnh bán hàng"
+var LS_CLIENT_ID = "htgn_client_id";
+var LS_ROOT_FOLDER = "htgn_root_folder";
+var DRIVE_SCOPE = "https://www.googleapis.com/auth/drive";
+
+/* ============ TRẠNG THÁI ============ */
+var accessToken = null;
+var tokenClient = null;
+var userEmail = "";
+var photos = [];      // mảng File
+var previewUrls = [];
+var brands = [];      // mảng {id, name}
+var uploading = false;
+
+function getClientId(){
+  try{ return localStorage.getItem(LS_CLIENT_ID) || OAUTH_CLIENT_ID || ""; }
+  catch(e){ return OAUTH_CLIENT_ID || ""; }
+}
+function getRootFolder(){
+  try{ return localStorage.getItem(LS_ROOT_FOLDER) || ROOT_FOLDER_ID; }
+  catch(e){ return ROOT_FOLDER_ID; }
+}
+
+/* ============ TIỆN ÍCH THUẦN (dễ test) ============ */
+function pad2(n){ return (n < 10 ? "0" : "") + n; }
+
+function buildFolderName(d){
+  return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()) +
+         "_" + pad2(d.getHours()) + pad2(d.getMinutes());
+}
+
+function formatDateTime(d){
+  return pad2(d.getDate()) + "/" + pad2(d.getMonth()+1) + "/" + d.getFullYear() +
+         " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+
+function buildGhiChu(o){
+  var lines = [];
+  lines.push("# Ghi chú sản phẩm");
+  lines.push("");
+  lines.push("- Ngày giờ: " + o.dateStr);
+  lines.push("- Thương hiệu: " + o.brand);
+  if(o.link)  lines.push("- Link sản phẩm: " + o.link);
+  if(o.price) lines.push("- Giá: " + o.price);
+  if(o.note)  lines.push("- Ghi chú: " + o.note);
+  lines.push("");
+  lines.push("---");
+  lines.push("Gửi từ app Hộp thư gửi nhanh.");
+  return lines.join("\n");
+}
+
+function validateState(s){
+  // s = {photoCount, brandId, signedIn, uploading}
+  if(!s.signedIn)  return {ok:false, label:"Đăng nhập Google để gửi"};
+  if(s.uploading)  return {ok:false, label:"Đang gửi..."};
+  if(s.photoCount < 1) return {ok:false, label:"Chọn ít nhất 1 ảnh"};
+  if(!s.brandId)   return {ok:false, label:"Chọn thương hiệu"};
+  return {ok:true, label:"Gửi vào kho"};
+}
+
+/* ============ UI ============ */
+function $(id){ return document.getElementById(id); }
+
+function setStatus(msg, type){
+  var box = $("statusBox");
+  if(!msg){ box.className = "status"; box.textContent = ""; return; }
+  box.className = "status show " + (type || "");
+  box.textContent = msg;
+}
+
+function refreshSubmit(){
+  var v = validateState({
+    photoCount: photos.length,
+    brandId: $("selBrand").value,
+    signedIn: !!accessToken,
+    uploading: uploading
+  });
+  var btn = $("btnSubmit");
+  btn.disabled = !v.ok;
+  btn.textContent = v.label;
+}
+
+function renderPreview(){
+  previewUrls.forEach(function(url){ URL.revokeObjectURL(url); });
+  previewUrls = [];
+  var box = $("photoPreview");
+  box.innerHTML = "";
+  photos.forEach(function(f, i){
+    var d = document.createElement("div");
+    d.className = "thumb";
+    var img = document.createElement("img");
+    var url = URL.createObjectURL(f);
+    previewUrls.push(url);
+    img.src = url;
+    img.alt = "Ảnh " + (i+1);
+    var x = document.createElement("button");
+    x.type = "button";
+    x.textContent = "×";
+    x.setAttribute("aria-label", "Xóa ảnh " + (i+1));
+    x.onclick = function(){
+      if(uploading) return;
+      photos.splice(i, 1);
+      renderPreview();
+      refreshSubmit();
+    };
+    d.appendChild(img);
+    d.appendChild(x);
+    box.appendChild(d);
+  });
+}
+
+function renderBrands(){
+  var sel = $("selBrand");
+  var cur = sel.value;
+  sel.innerHTML = "";
+  var opt0 = document.createElement("option");
+  opt0.value = "";
+  opt0.textContent = "-- Chọn thương hiệu --";
+  sel.appendChild(opt0);
+  brands.forEach(function(b){
+    var o = document.createElement("option");
+    o.value = b.id;
+    o.textContent = b.name;
+    sel.appendChild(o);
+  });
+  if(cur && brands.some(function(b){ return b.id === cur; })) sel.value = cur;
+}
+
+/* ============ GOOGLE AUTH ============ */
+function updateAuthUI(){
+  $("authWho").textContent = accessToken ? ("Đã đăng nhập" + (userEmail ? ": " + userEmail : "")) : "Chưa đăng nhập Google";
+  $("btnSignIn").hidden = !!accessToken;
+  $("btnSignOut").hidden = !accessToken;
+  $("setupNotice").hidden = !!getClientId();
+  refreshSubmit();
+}
+
+function doSignIn(){
+  var cid = getClientId();
+  if(!cid){ updateAuthUI(); setStatus("Chưa có Client ID. Xem hướng dẫn ở khung vàng bên trên.", "warn"); return; }
+  if(typeof google === "undefined" || !google.accounts || !google.accounts.oauth2){
+    setStatus("Thư viện Google chưa tải xong. Kiểm tra mạng rồi bấm lại.", "err");
+    return;
+  }
+  try{
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cid,
+      scope: DRIVE_SCOPE,
+      callback: onTokenResponse
+    });
+    tokenClient.requestAccessToken({prompt: ""});
+  }catch(e){
+    setStatus("Không khởi tạo được đăng nhập Google: " + e.message, "err");
+  }
+}
+
+function onTokenResponse(resp){
+  if(resp && resp.error){
+    setStatus("Đăng nhập Google thất bại. Hãy thử lại.", "err");
+    return;
+  }
+  accessToken = resp.access_token;
+  userEmail = "";
+  setStatus("", "");
+  updateAuthUI();
+  fetchUserEmail();
+  loadBrands();
+}
+
+function doSignOut(){
+  try{
+    if(accessToken && typeof google !== "undefined" && google.accounts && google.accounts.oauth2){
+      google.accounts.oauth2.revoke(accessToken, function(){});
+    }
+  }catch(e){}
+  accessToken = null;
+  userEmail = "";
+  brands = [];
+  renderBrands();
+  $("brandHint").textContent = "Đăng nhập Google để tải danh sách hãng từ kho.";
+  updateAuthUI();
+  setStatus("Đã đăng xuất.", "");
+}
+
+function fetchUserEmail(){
+  api("/drive/v3/about?fields=user(emailAddress)").then(function(d){
+    if(d && d.user && d.user.emailAddress){
+      userEmail = d.user.emailAddress;
+      updateAuthUI();
+    }
+  }).catch(function(){ /* không bắt buộc, bỏ qua */ });
+}
+
+/* ============ DRIVE API ============ */
+function api(path, opts){
+  path += (path.indexOf("?") === -1 ? "?" : "&") + "supportsAllDrives=true";
+  opts = opts || {};
+  var headers = {"Authorization": "Bearer " + accessToken};
+  for(var k in (opts.headers || {})) headers[k] = opts.headers[k];
+  return fetch("https://www.googleapis.com" + path, {
+    method: opts.method || "GET",
+    headers: headers,
+    body: opts.body
+  }).then(function(res){
+    if(res.status === 401){
+      accessToken = null;
+      updateAuthUI();
+      throw new Error("AUTH_EXPIRED");
+    }
+    if(!res.ok) throw new Error("DRIVE_" + res.status);
+    return res.json();
+  }).catch(function(err){
+    if(err && err.message === "AUTH_EXPIRED")
+      throw new Error("Phiên đăng nhập hết hạn. Hãy đăng nhập Google lại.");
+    if(err instanceof TypeError)
+      throw new Error("Mất mạng hoặc không kết nối được Google Drive. Kiểm tra mạng rồi thử lại.");
+    throw err;
+  });
+}
+
+function listBrandFolders(q){
+  var files = [];
+  function loadPage(pageToken){
+    var path = "/drive/v3/files?q=" + q + "&fields=nextPageToken,files(id,name)&orderBy=name&pageSize=200&includeItemsFromAllDrives=true";
+    if(pageToken) path += "&pageToken=" + encodeURIComponent(pageToken);
+    return api(path).then(function(d){
+      files = files.concat(d.files || []);
+      return d.nextPageToken ? loadPage(d.nextPageToken) : {files:files};
+    });
+  }
+  return loadPage();
+}
+
+function loadBrands(){
+  var rootId = getRootFolder();
+  if(!rootId){ $("brandHint").textContent = "Chưa có ID thư mục kho. Vào Cài đặt để nhập."; return; }
+  $("brandHint").textContent = "Đang tải danh sách hãng...";
+  var q = encodeURIComponent("'" + rootId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  listBrandFolders(q)
+    .then(function(d){
+      brands = (d.files || []).map(function(f){ return {id:f.id, name:f.name}; });
+      renderBrands();
+      refreshSubmit();
+      $("brandHint").textContent = brands.length
+        ? ("Đã tải " + brands.length + " hãng từ kho.")
+        : "Chưa có hãng nào trong kho. Bấm \"+ Tạo hãng mới\" để thêm.";
+    })
+    .catch(function(err){
+      $("brandHint").textContent = "Không tải được danh sách hãng.";
+      setStatus("Tải danh sách hãng thất bại: " + err.message, "err");
+    });
+}
+
+function createFolder(name, parentId){
+  return api("/drive/v3/files?fields=id", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({name:name, mimeType:"application/vnd.google-apps.folder", parents:[parentId]})
+  }).then(function(d){ return d.id; });
+}
+
+function uploadFile(fname, mimeType, file, folderId){
+  var meta = {name:fname, parents:[folderId], mimeType:mimeType};
+  var boundary = "htgn_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(){ resolve(reader.result.slice(reader.result.indexOf(",") + 1)); };
+    reader.onerror = function(){ reject(reader.error || new Error("Không đọc được file để tải lên.")); };
+    reader.readAsDataURL(file);
+  }).then(function(base64){
+    var body = "--" + boundary + "\r\n" +
+      "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
+      JSON.stringify(meta) + "\r\n" +
+      "--" + boundary + "\r\n" +
+      "Content-Type: " + mimeType + "\r\n" +
+      "Content-Transfer-Encoding: base64\r\n\r\n" +
+      base64 + "\r\n--" + boundary + "--\r\n";
+    return fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id&supportsAllDrives=true", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + accessToken,
+        "Content-Type": 'multipart/related; boundary="' + boundary + '"'
+      },
+      body: body
+    });
+  }).then(function(res){
+    if(res.status === 401){
+      accessToken = null;
+      updateAuthUI();
+      throw new Error("Phiên đăng nhập hết hạn. Hãy đăng nhập Google lại.");
+    }
+    if(!res.ok) throw new Error("Tải file lên thất bại (mã " + res.status + ").");
+    return res.json();
+  }).catch(function(err){
+    if(err instanceof TypeError)
+      throw new Error("Mất mạng khi đang tải file lên. Kiểm tra mạng rồi thử lại.");
+    throw err;
+  });
+}
+
+/* ============ TẠO HÃNG MỚI ============ */
+function onCreateBrand(){
+  if(!accessToken){ setStatus("Hãy đăng nhập Google trước khi tạo hãng mới.", "warn"); return; }
+  var name = $("inpNewBrand").value.trim().replace(/\//g, "-");
+  if(!name){ setStatus("Nhập tên hãng rồi bấm Tạo.", "warn"); return; }
+  setStatus("Đang tạo thư mục hãng \"" + name + "\"...", "");
+  createFolder(name, getRootFolder()).then(function(){
+    $("inpNewBrand").value = "";
+    $("newBrandBox").hidden = true;
+    setStatus("Đã tạo hãng \"" + name + "\".", "ok");
+    return loadBrandsP();
+  }).then(function(){
+    var found = brands.find(function(b){ return b.name === name; });
+    if(found){ $("selBrand").value = found.id; }
+    refreshSubmit();
+  }).catch(function(err){
+    setStatus("Tạo hãng thất bại: " + err.message, "err");
+  });
+}
+
+function loadBrandsP(){
+  var rootId = getRootFolder();
+  var q = encodeURIComponent("'" + rootId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false");
+  return listBrandFolders(q)
+    .then(function(d){
+      brands = (d.files || []).map(function(f){ return {id:f.id, name:f.name}; });
+      renderBrands();
+      $("brandHint").textContent = "Đã tải " + brands.length + " hãng từ kho.";
+    });
+}
+
+/* ============ GỬI VÀO KHO ============ */
+function doSubmit(){
+  if(uploading) return;
+  var brandId = $("selBrand").value;
+  var brandName = $("selBrand").selectedOptions[0] ? $("selBrand").selectedOptions[0].textContent : "";
+  var v = validateState({photoCount: photos.length, brandId: brandId, signedIn: !!accessToken, uploading: uploading});
+  if(!v.ok){ setStatus(v.label + ".", "warn"); return; }
+
+  uploading = true;
+  refreshSubmit();
+  var now = new Date();
+  var folderName = buildFolderName(now);
+  var link = $("inpLink").value.trim();
+  var price = $("inpPrice").value.trim();
+  var note = $("inpNote").value.trim();
+
+  setStatus("Đang tạo thư mục " + folderName + "...", "");
+  var chain = createFolder(folderName, brandId);
+
+  photos.forEach(function(f, i){
+    chain = chain.then(function(folderId){
+      setStatus("Đang gửi ảnh " + (i+1) + "/" + photos.length + "...", "");
+      var fname = (f.name && f.name.trim()) ? f.name : ("anh-" + (i+1) + ".jpg");
+      return uploadFile(fname, f.type || "image/jpeg", f, folderId).then(function(){ return folderId; });
+    });
+  });
+
+  chain = chain.then(function(folderId){
+    setStatus("Đang ghi GHI-CHU.md...", "");
+    var md = buildGhiChu({
+      dateStr: formatDateTime(now),
+      brand: brandName,
+      link: link,
+      price: price,
+      note: note
+    });
+    return uploadFile("GHI-CHU.md", "text/markdown", new Blob([md], {type:"text/markdown;charset=utf-8"}), folderId);
+  });
+
+  chain.then(function(){
+    setStatus("Đã gửi xong " + photos.length + " ảnh vào kho (hãng " + brandName + ", thư mục " + folderName + ").", "ok");
+    photos = [];
+    $("inpLink").value = "";
+    $("inpPrice").value = "";
+    $("inpNote").value = "";
+    $("fileCamera").value = "";
+    $("fileGallery").value = "";
+    renderPreview();
+    uploading = false;
+    refreshSubmit();
+  }).catch(function(err){
+    uploading = false;
+    refreshSubmit();
+    setStatus("Gửi thất bại: " + err.message, "err");
+  });
+}
+
+/* ============ KHỞI TẠO ============ */
+function init(){
+  $("btnSignIn").onclick = doSignIn;
+  $("btnSignOut").onclick = doSignOut;
+
+  $("btnCamera").onclick = function(){ $("fileCamera").click(); };
+  $("btnGallery").onclick = function(){ $("fileGallery").click(); };
+  $("fileCamera").onchange = function(e){ addFiles(e.target.files); };
+  $("fileGallery").onchange = function(e){ addFiles(e.target.files); };
+
+  function addFiles(list){
+    if(!list || !list.length) return;
+    for(var i = 0; i < list.length; i++){
+      var f = list[i];
+      if(!f.type || f.type.indexOf("image/") === 0) photos.push(f);
+    }
+    $("fileCamera").value = "";
+    $("fileGallery").value = "";
+    renderPreview();
+    refreshSubmit();
+  }
+
+  $("selBrand").onchange = refreshSubmit;
+
+  $("btnNewBrand").onclick = function(){
+    var box = $("newBrandBox");
+    box.hidden = !box.hidden;
+    if(!box.hidden) $("inpNewBrand").focus();
+  };
+  $("btnCancelBrand").onclick = function(){
+    $("newBrandBox").hidden = true;
+    $("inpNewBrand").value = "";
+  };
+  $("btnCreateBrand").onclick = onCreateBrand;
+
+  $("btnSubmit").onclick = doSubmit;
+
+  $("cfgClientId").value = getClientId();
+  $("cfgRootFolder").value = getRootFolder();
+  $("btnSaveCfg").onclick = function(){
+    try{
+      localStorage.setItem(LS_CLIENT_ID, $("cfgClientId").value.trim());
+      localStorage.setItem(LS_ROOT_FOLDER, $("cfgRootFolder").value.trim() || ROOT_FOLDER_ID);
+    }catch(e){}
+    setStatus("Đã lưu cài đặt.", "ok");
+    updateAuthUI();
+  };
+
+  updateAuthUI();
+}
+
+if(typeof document !== "undefined"){
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", init);
+  }else{
+    init();
+  }
+}
+</script>
+</body>
+</html>
